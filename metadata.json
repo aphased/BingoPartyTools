@@ -1,0 +1,8 @@
+{
+  "author": "aphased",
+  "name":"&9BingoPartyTools",
+  "description":"Tools for managing a persistent Hypixel Skyblock Bingo Party, even if the party leader (\"host\") is AFK.\n\n&r&l/bpt&r&7&o - open settings",
+  "requires":["SettingsManager"],
+  "entry": "index.js",
+  "version": "1.0.0"
+}
