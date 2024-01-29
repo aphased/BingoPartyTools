@@ -121,7 +121,7 @@ Thank you for testing & helping with fresh ideas to:
 - KiLLz_StRoMzY
 - BossFlea
 - PotjeZout
-- p0iS_enjoyer
+- mafrylikebedwars/p0iS_enjoyer
 
 Special thanks for the BingoBrewers Discord server & its community to:
 - indigo_polecat
