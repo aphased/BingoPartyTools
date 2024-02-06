@@ -282,6 +282,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
       return;
     receivingPlayerName = commandArgument;
     outputCommand("ignore remove " + receivingPlayerName);
+    waitAndOutputCommand("r Removed " + receivingPlayerName + " from ignore list.");
     break;
   case "open":
     // fallthrough for additional aliases
