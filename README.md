@@ -53,21 +53,22 @@ However, the one used in the primary column is how this feature is referred to i
 
 Features which work differently from Hypixel settings are explained.
 
-|  Command  |                                                             Functionality                                                             |  Alias(es)   |
-|-----------|---------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| disband   | is always disallowed                                                                                                                  |              |
-| transfer  | self-explanatory, should not need to be used though                                                                                   |              |
-| mute      | self-explanatory                                                                                                                      | unmute       |
-| promote   | self-explanatory, but not even strictly required in this system                                                                       |              |
-| kick      | self-explanatory                                                                                                                      | remove       |
-| block     | kick/remove with additional ignore add                                                                                                | ban          |
-| unblock   | revert ignore add, but don't re-invite                                                                                                | unban        |
-| stream    | (re-)open party into a public one, with default size 100, useful e.g. after briefly transferring to a non-MVP++ ranked player         | public, open |
-| invite    | self-explanatory                                                                                                                      | inv          |
-| allinvite | toggles the party setting                                                                                                             |              |
-| speak     | allowlisted people can talk in party chat during p mute even without mod rank                                                         | say          |
-| rule      | output Bingo Brewers' rules as listed in the Discord channel, 1-7 (defaults to saying rule 1 in party chat if no number was provided) |              |
-| help      | points to the link for this readme                                                                                                    |              |
+|  Command    |                                                             Functionality                                                             |  Alias(es)   |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| disband     | is always disallowed                                                                                                                  |              |
+| transfer    | self-explanatory, should not need to be used though                                                                                   |              |
+| mute        | self-explanatory                                                                                                                      | unmute       |
+| promote     | self-explanatory, but not even strictly required in this system                                                                       |              |
+| kickoffline | self-explanatory, to make space for new players if party is full (Hypixel's limit is 100 players)                                     | kickafk      |
+| kick        | self-explanatory                                                                                                                      | remove       |
+| block       | kick/remove with additional ignore add                                                                                                | ban          |
+| unblock     | revert ignore add, but don't re-invite                                                                                                | unban        |
+| stream      | (re-)open party into a public one, with default size 100, useful e.g. after briefly transferring to a non-MVP++ ranked player         | public, open |
+| invite      | self-explanatory                                                                                                                      | inv          |
+| allinvite   | toggles the party setting                                                                                                             |              |
+| speak       | allowlisted people can talk in party chat during p mute even without mod rank                                                         | say          |
+| rule        | output Bingo Brewers' rules as listed in the Discord channel, 1-7 (defaults to saying rule 1 in party chat if no number was provided) |              |
+| help        | points to the link for this readme                                                                                                    |              |
 
 
 ## Example output
