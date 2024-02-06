@@ -2,6 +2,7 @@
 
 ChatTriggers module for Forge Minecraft 1.8.9 which helps in managing a Hypixel Skyblock "Bingo Party".
 
+![The module in use](example-image.png)
 
 ## Warning
 
@@ -59,8 +60,8 @@ Features which work differently from Hypixel settings are explained.
 | mute      | self-explanatory                                                                                                                      | unmute       |
 | promote   | self-explanatory, but not even strictly required in this system                                                                       |              |
 | kick      | self-explanatory                                                                                                                      | remove       |
-| block     | kick/remove with additional ignore add                                                                                                |              |
-| unblock   | revert ignore add, but don't re-invite                                                                                                |              |
+| block     | kick/remove with additional ignore add                                                                                                | ban          |
+| unblock   | revert ignore add, but don't re-invite                                                                                                | unban        |
 | stream    | (re-)open party into a public one, with default size 100, useful e.g. after briefly transferring to a non-MVP++ ranked player         | public, open |
 | invite    | self-explanatory                                                                                                                      | inv          |
 | allinvite | toggles the party setting                                                                                                             |              |
@@ -116,10 +117,12 @@ Thank you for testing & helping with fresh ideas to:
 - Tryp0MC
 - ooffyy
 - p0iS
+- Calva
 - Hype_the_Time
 - NotOgfishyboi
 - KiLLz_StRoMzY
 - BossFlea
+- BatmanCrtns
 - PotjeZout
 - mafrylikebedwars/p0iS_enjoyer
 
@@ -127,6 +130,13 @@ Special thanks for the BingoBrewers Discord server & its community to:
 - indigo_polecat
 - HunterHiHunter
 
+
 ## In case of issues…
 
 … catch me in-game or on Discord, with the same name as used here.
+
+
+## License
+
+BingoPartyTools is open-sourced software licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
