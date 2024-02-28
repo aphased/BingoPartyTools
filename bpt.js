@@ -1,7 +1,17 @@
 import { BingoPartyTools } from "./settings";
-import { removeRank } from "./utils";
+import { removeRank, removeFormatting, containsInNestedArray, isAccountOwner, log, err } from "./utils";
 import { allowlist, bingoBrewersRules, partyHostNameWithoutRank } from "./data";
 
+// always set to false if code module is ran as a Mineflayer bot
+const usesChatTriggers = true;
+
+// change as needed
+const debugOutputEnabled = true;
+
+function logDebug(message) {
+  if (!debugOutputEnabled) return;
+  log(message);
+}
 
 /**
  * Checks if the passed in-game name is allowed to moderate the party.
@@ -10,20 +20,36 @@ import { allowlist, bingoBrewersRules, partyHostNameWithoutRank } from "./data";
  * @param {String} formattedPlayerName  Account name of player to be checked
  * against allowlist – can be but does not have to be including Minecraft
  * formatting, Hypixel rank, and in any combination of upper-/lower-casing)
+ * @returns {boolean}
  */
 function playerHasPermissions(formattedPlayerName) {
   const unformattedPlayerName = removeRank(formattedPlayerName).toLowerCase();
-  if (!allowlist.includes(unformattedPlayerName)) return false;
-  else return true;
+  // Current implementation:
+  return allowlist.includes(unformattedPlayerName);
+  /* Alternative implementation if the allowlist is ever turned into a nested
+  array (a sub-array for each splasher, with more than one entry resembling a
+  player's main plus "alt" accounts): */
+  // return containsInNestedArray(allowlist, unformattedPlayerName);
 }
 
 /**
- * These exist for at least partially circumventing Hypixel's
- * "You cannot say the same message twice!"
+ * These facilitate some checks at the beginning of function
+ * executeHypixelPartyCommand().
+ * TODO: keep arrays updated in case new commands are added in either category.
+ */
+const negativeCommands = ["kick", "remove", "ban", "block"];
+const commandsRequiringFullMessage = ["speak", "say", "cmd"];
+
+/**
+ * These alternating output messages (for the same command) exist for – at
+ * least partially – circumventing Hypixel's "You cannot say the same message
+ * twice!"
  */
 let helpOutputIndex = 0;
-const helpMessages = ["r For a list of available commands see github dot com/aphased/bingopartytools", "r GitHub: aphased/bingopartytools for all commands",
-"r All commands are shown on GitHub: aphased/bingopartytools"];
+const helpMessages = ["r For a list of available commands see github dot \
+  com/aphased/bingopartytools",
+  "r GitHub: aphased/bingopartytools for all commands",
+  "r All commands are shown on GitHub: aphased/bingopartytools"];
 
 /**
  * This function masks the true implementation of how messages/commands are
@@ -34,26 +60,38 @@ const helpMessages = ["r For a list of available commands see github dot com/aph
  * should always specify their respective channel (e.g. `/pc <message to party>`, `/msg <ign> <direct message whisper>`, etc.)
  */
 function outputCommand(command) {
-  // Using ChatTriggers command function, which prepends the slash for us:
-  ChatLib.command(command);
-  // Using Mineflayer later perhaps could look like:
-  // bot.chat("/" + command);
+  if (usesChatTriggers) {
+    // Using ChatTriggers' command function, which prepends the slash for us:
+    ChatLib.command(command);
+  } else {
+    // Using Mineflayer later could look like:
+    bot.chat("/" + command);
+  }
 }
 
 /**
  * Exists to turn a common three-line operation into a one-liner.
- * @param {String} command  Command message to be executed **without** leading
- * slash /
+ * @param {String} command  Full command message to be executed
+ * **without** leading slash "/"
  * @param {Number} timeout  Integer time to wait until command execution in
  * milliseconds (thanks Hypixel)
  */
 function waitAndOutputCommand(command, timeout) {
   // Ensure to wait at least half a second if this function is called
-  let waitDuration = timeout > 500 ? timeout : 500;
-  setTimeout(() => {
+  let waitDuration;
+  if (usesChatTriggers) {
+    waitDuration = timeout > 500 ? timeout : 500;
+    setTimeout(() => {
+      outputCommand(command);
+    }, waitDuration);
+  } else {
+    // adapted to rather use the bot's tick-based system with a minimum of
+    // 10 ticks (500ms), as minecraft/mineflayer run on 20 ticks per second
+    // (i.e. 1 tick := 50 ms)
+    waitDuration = timeout > 500 ? (timeout/50) : (500/50);
+    bot.waitforticks(waitDuration);
     outputCommand(command);
-  }, waitDuration);
-  return;
+  }
 }
 
 /**
@@ -66,11 +104,17 @@ function waitAndOutputCommand(command, timeout) {
  * @returns {Number} value less than zero if setting is toggled **off**, positive integer otherwise (i.e., if setting is enabled)
  */
 function checkSetting(settingCategory, setting, command) {
-  if (!BingoPartyTools.getSetting(settingCategory, setting)) {
-    let informDisabledSetting = "r This setting is currently disabled. ("+ command + ")";
-    outputCommand(informDisabledSetting);
-    return -1;
-  } else return command.charCodeAt(0); // some nonnegative number
+  if (usesChatTriggers) {
+    // use a SettingsManager SettingsObject for the ChatTriggers module
+    if (!BingoPartyTools.getSetting(settingCategory, setting)) {
+      let informDisabledSetting = "r This setting is currently disabled. ("+ command + ")";
+      outputCommand(informDisabledSetting);
+      return false;
+    } else return true;
+  } else {
+    // all settings are enabled if ran as bot
+    return true;
+  }
 }
 
 /**
@@ -110,16 +154,13 @@ register("chat", function autoAcceptPartyInvite(formattedSenderName) {
  * account via direct messages, i.e. using /msg
  */
 register("chat", function processCommandFromDirectMessage(formattedSenderName, message) {
-  message = ChatLib.removeFormatting(message).trim();
-
+  message = removeFormatting(message).trim();
   /* if it's not in command syntax, we can and should directly exit (since every
    direct and perhaps later also party message is scanned for a match) */
   if (message.slice(0,1) != "!") {
     return;
   }
-
   let messageWords = message.split(" ");
-
   var command = "";
   if (messageWords.length > 1) {
     // e.g. !p mute, !p kick ign, etc.
@@ -128,7 +169,6 @@ register("chat", function processCommandFromDirectMessage(formattedSenderName, m
     // Exit if no command was passed
     return;
   }
-
   if (!playerHasPermissions(formattedSenderName)) {
     /* The messages are pretty soon blocked by Hypixel for repeating multiple
     times anyways… so for the time being at least, disallowed users are just
@@ -136,20 +176,17 @@ register("chat", function processCommandFromDirectMessage(formattedSenderName, m
     // outputCommand("r You do not have the permissions to run this! ("+ command + ")");
     return;
   }
-
-  // "debug":
-  //console.log("--- Received allowed direct /msg! ---");
-  //console.log("Sending player:\n'" + sendingPlayerName + "'");
-  //console.log("Message:\n'" + message + "'");
-
+  logDebug("--- Received allowed direct /msg! ---");
+  logDebug("Sending player:\n'" + formattedSenderName + "'");
+  logDebug("Message:\n'" + message + "'");
   /* Argument to a command, if present, comes one word after it
   (will most commonly be e.g. the receivingPlayerName) */
   var commandArgument = "";
   if (messageWords.length > 2) {
     commandArgument = messageWords[2];
   }
-
-  // passing the full message is solely needed for !p speak, otherwise it wouldn't be needed
+  /* passing the full message is still needed for !p speak/say/cmd,
+  otherwise it would not be needed anymore */
   executeHypixelPartyCommand(formattedSenderName, command, commandArgument, message);
 }).setChatCriteria("From ${name}: ${message}");
 
@@ -169,6 +206,10 @@ register("chat", function processCommandFromPartyChat(formattedSenderName, messa
 /**
  * The function to be called when a new ChatTrigger is added, e.g. commands
  * sent in party/guild chat or even perhaps received from Discord.
+ * Currently active commands are:
+ * transfer, mute, promote, kick, kickoffline, block, unblock, stream, invite,
+ * allinvite (setting), speak, rule, help, (BingoParty account admin-only) cmd.
+ * For full explanation, all aliases & usage see GitHub repository's README.
  * @param {String} formattedSenderName  IGN with Hypixel rank and potentially Minecraft formatting codes, e.g. `[MVP+] splasherName`
  * @param {String} command  The entire single-word command to be executed
  * @param {String} commandArgument  Optional argument to the main command,
@@ -177,44 +218,58 @@ register("chat", function processCommandFromPartyChat(formattedSenderName, messa
  * party. All commands have exactly one argument, except for speak, which uses
  * the entire rest of the message.
  * @param {String} message  The entire message of the command (everything after
- * e.g. `From formattedSenderName:`)
+ * e.g. `From formattedSenderName: `)
  */
 function executeHypixelPartyCommand(formattedSenderName, command, commandArgument, message) {
-  // used for disband, help and default (invalid) commands in switch case below
-  const casePreservingRankRemovedIGN = removeRank(formattedSenderName);
+  // used for output in the disband and default (invalid) commands' output later
+  const casePreservingRankRemovedSenderIGN = removeRank(formattedSenderName);
 
-  let receivingPlayerName = "";
+  let receivingPlayerName = commandArgument || "";
+
+  /* Prevent splashers from kicking or even banning
+  other players who have mod permissions: */
+  if (negativeCommands.includes(command)) {
+    if (receivingPlayerName.toLowerCase() === partyHostNameWithoutRank.toLowerCase()) {
+      /* Can't kick the party leader, have a little fun instead. Also, I
+      attempted to make it a little less hard-coded unto myself and more
+      interchangeable by at least using a variable for the party host name… */
+      outputCommand("pc " + formattedSenderName + " tried " + command + "ing [MVP++] " + partyHostNameWithoutRank + " from the party. L bozo!");
+      return;
+    }
+    /* All other commands negatively affecting splashers
+    (i.e. players with permissions) are simply ignored */
+    if (playerHasPermissions(receivingPlayerName)) {
+      return;
+    }
+  }
 
   /* Hypixel quote 2024-01: "You are sending commands too fast! Please slow
   down." + "You can only send a message once every half second!"
-  – Yet this issue persisted with anything up to like 2 seconds delay…
+  – And yet this issue persisted with anything up to like 2 seconds delay…
   Furthermore of note: ooffyy said 2024-01-07 that queueing commands was
   apparently disallowed by Hypixel, so we apply the wait individually every
   time instead of just using queue-like push/wait+send/pop operations */
   let defaultTimeoutMillis = 2190 + Math.floor(Math.random() * 41) - 20;
 
-  // remove the first two words – "!p command" – from the message string,
-  // where command := {speak,say,cmd}
-  // TODO: keep the number of words "sliced off" UPDATED in case of
-  // ever moving away from `!p command` system, to e.g. just `!command`
-  const messageToBroadcast = message.split(" ").slice(2).join(" ");
+  let messageToBroadcast = "";
+  if (commandsRequiringFullMessage.includes(command)) {
+    // Remove the first two words – "!p command" – from the message string.
+    // TODO: keep the number of words "sliced off" UPDATED in case of
+    // ever moving away from `!p command` system, to e.g. just `!command`
+    messageToBroadcast = message.split(" ").slice(2).join(" ");
+  }
 
-  /* Currently active commands (for full explanation, all aliases &
-  usage see GitHub repository's README):
-  transfer, mute, promote, kick, kickoffline, block, unblock, stream, invite,
-  allinvite (setting), speak, rule, help */
   switch(command) {
   case "disband":
     // disband is never allowed! "undocumented" non-command
     // (so we perform zero actions except for this funny-eerie bot response)
-    waitAndOutputCommand("r What exactly are your plans, " + casePreservingRankRemovedIGN + "? :raisedEyebrow:", defaultTimeoutMillis);
+    waitAndOutputCommand("r What exactly are your plans, " + casePreservingRankRemovedSenderIGN + "? :raisedEyebrow:", defaultTimeoutMillis);
     break;
   case "transfer":
-    if (checkSetting("BingoPartyFeatures", "Party transfer", command) < 0)
-      return;
-    receivingPlayerName = commandArgument;
+    if (checkSetting("BingoPartyFeatures", "Party transfer", command))
+      break;
     if (receivingPlayerName === "") {
-      return;
+      break;
     }
     outputCommand("pc Party was transferred to " + receivingPlayerName + " by " + formattedSenderName + ".");
     waitAndOutputCommand("p transfer " + receivingPlayerName, defaultTimeoutMillis);
@@ -222,18 +277,17 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "unmute":
     // fallthrough for additional alias
   case "mute":
-    if (checkSetting("BingoPartyFeatures", "Party mute", command) < 0)
-      return;
+    if (checkSetting("BingoPartyFeatures", "Party mute", command))
+      break;
     outputCommand("p mute");
     waitAndOutputCommand("pc Party mute was used by " + formattedSenderName + ".", defaultTimeoutMillis);
     break;
   case "promote":
-    if (checkSetting("BingoPartyFeatures", "Party promote", command) < 0)
-      return;
-    receivingPlayerName = commandArgument;
-    if (receivingPlayerName == null || receivingPlayerName.length == 0) {
+    if (checkSetting("BingoPartyFeatures", "Party promote", command))
+      break;
+    if (receivingPlayerName === "") {
       // no name supplied, thus promote command sender instead
-      receivingPlayerName = removeRank(formattedSenderName).toLowerCase();
+      receivingPlayerName = removeRank(formattedSenderName);
     }
     outputCommand("pc " + receivingPlayerName + " was promoted by " + formattedSenderName + ".");
     waitAndOutputCommand("p promote " + receivingPlayerName, defaultTimeoutMillis);
@@ -246,18 +300,10 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "remove":
     // fallthrough for additional alias
   case "kick":
-    if (checkSetting("BingoPartyFeatures", "Party kick", command) < 0)
-      return;
-    receivingPlayerName = commandArgument;
-    if (receivingPlayerName.toLowerCase() === partyHostNameWithoutRank.toLowerCase()) {
-      // Can't kick myself if I'm party leader, have a little fun instead. Also,
-      // I attempted to make it a little less hard-coded unto myself and more
-      // interchangeable by at least using a variable for the party host name…
-      outputCommand("pc " + formattedSenderName + " tried kicking [MVP++] " + partyHostNameWithoutRank + " from the party. L bozo!");
-      return;
-    }
-    else if (receivingPlayerName === "") {
-      return;
+    if (checkSetting("BingoPartyFeatures", "Party kick", command))
+      break;
+    if (receivingPlayerName === "") {
+      break;
     }
     outputCommand("pc " + receivingPlayerName + " was kicked from the party by " + formattedSenderName + ".");
     waitAndOutputCommand("p remove " + receivingPlayerName, defaultTimeoutMillis);
@@ -265,11 +311,10 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "ban":
     // fallthrough for additional alias
   case "block":
-    if (checkSetting("BingoPartyFeatures", "Party block", command) < 0)
-      return;
-    receivingPlayerName = commandArgument;
+    if (checkSetting("BingoPartyFeatures", "Party block", command))
+      break;
     if (receivingPlayerName === "") {
-      return;
+      break;
     }
     outputCommand("ignore add " + receivingPlayerName);
     waitAndOutputCommand("p remove " + receivingPlayerName, defaultTimeoutMillis+500);
@@ -278,9 +323,8 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "unban":
     // fallthrough for additional alias
   case "unblock":
-    if (checkSetting("BingoPartyFeatures", "Party unblock", command) < 0)
-      return;
-    receivingPlayerName = commandArgument;
+    if (checkSetting("BingoPartyFeatures", "Party unblock", command))
+      break;
     outputCommand("ignore remove " + receivingPlayerName);
     waitAndOutputCommand("r Removed " + receivingPlayerName + " from ignore list.");
     break;
@@ -289,8 +333,8 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "public":
     // fallthrough for additional aliases
   case "stream":
-    if (checkSetting("BingoPartyFeatures", "Party open (stream size)", command) < 0)
-      return;
+    if (checkSetting("BingoPartyFeatures", "Party open (stream size)", command))
+      break;
     // Hypixel's lowest for a stream is a maximum of two members, but that
     // does not really make sense for the bingo party. Adapt as needed.
     let minimumPartySlots = 10; // 20, 30, …
@@ -307,45 +351,53 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
     }
     outputCommand("pc Party size was set to " + maximumPartySlots + " by " + formattedSenderName + ".");
     waitAndOutputCommand("stream open " + maximumPartySlots, defaultTimeoutMillis);
+    logDebug("Re-opened party");
     break;
   case "inv":
     // fallthrough for additional alias
   case "invite":
-    if (checkSetting("BingoPartyFeatures", "Party invite", command) < 0)
-      return;
-    receivingPlayerName = commandArgument;
-    if (receivingPlayerName == null || receivingPlayerName.length == 0) {
+    if (checkSetting("BingoPartyFeatures", "Party invite", command))
+      break;
+    if (receivingPlayerName === "") {
       // no name supplied, thus invite command sender instead
-      receivingPlayerName = removeRank(formattedSenderName).toLowerCase();
+      receivingPlayerName = removeRank(formattedSenderName);
     }
     outputCommand("p invite " + receivingPlayerName);
     waitAndOutputCommand("pc " + formattedSenderName + " invited " + receivingPlayerName + " to the party.", defaultTimeoutMillis);
     break;
   case "allinvite":
-    if (checkSetting("BingoPartyFeatures", "Party allinvite", command) < 0)
-      return;
+    if (checkSetting("BingoPartyFeatures", "Party allinvite", command))
+      break;
     outputCommand("p setting allinvite");
     waitAndOutputCommand("pc " + formattedSenderName + " toggled allinvite setting.", defaultTimeoutMillis);
     break;
   case "say":
     // fallthrough for additional alias
   case "speak":
-    if (checkSetting("BingoPartyFeatures", "Party speak", command) < 0)
-      return;
+    if (checkSetting("BingoPartyFeatures", "Party speak", command))
+      break;
     outputCommand("pc " + formattedSenderName + ": " + messageToBroadcast);
     break;
   case "pl":
     // fallthrough for additional alias
   case "size":
-    // TODO: dm back "party members: xx", extracted from /pl
-    // (for checking on party even while not in it…)
+    // TODO: dm back "party members: xx", extracted from /pl (for checking
+    // in on the party even while not in it…); probably something  akin to:
     // outputCommand("pl");
     // memberMessage = /* more parsing…? */ "";
     // outputCommand("r " + memberMessage);
+    // could perhaps be done similarly to HypixelUtilities' "improved friends
+    // list" output?
+    break;
+  case "lsbanned":
+    // TODO: for use as a bot account, to automate/help in managing users added
+    // to the account's ignore list ("blocked"/"banned"). If I don't write this
+    // feature anymore, the party leader bot account owner has to perform
+    // this task, or simply un-ignore/unblock IGNs manually as requested.
     break;
   case "rule":
-    if (checkSetting("BingoPartyFeatures", "Party rule", command) < 0)
-      return;
+    if (checkSetting("BingoPartyFeatures", "Party rule", command))
+      break;
     let ruleNumber = "";
     // Convert iterator (map.keys()) into array to check against
     // The data itself comes from data.js, just like allowlist array
@@ -364,23 +416,24 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
     waitAndOutputCommand("pc Rule #" + ruleNumber + ": " + bingoBrewersRules.get(ruleNumber), defaultTimeoutMillis);
     break;
   case "help":
-    if (checkSetting("BingoPartyFeatures", "!p help", command) < 0)
-      return;
-    /* The use of three different messages with the same content is to prevent
-    Hypixel's blocking of repeatedly sending the same in direct messages. For
-    this, three differing messages are needed/suffice. */
+    if (checkSetting("BingoPartyFeatures", "!p help", command))
+      break;
+    /* The use of a couple different messages with essentially the same content
+    is to prevent Hypixel's blocking of repeatedly sending the same in direct
+    messages. For this, at least three differing messages are needed. */
     outputCommand(helpMessages[helpOutputIndex]);
     helpOutputIndex++;
     /* "reset" to outputting the first message from the selection again next time the help command is used, cycling through all available messages */
     if (helpOutputIndex === helpMessages.length) helpOutputIndex = 0;
     break;
   case "cmd":
-    /* Administrator-only command: will directly execute _whatever_ is received.
-    Due to this being de facto equivalent to having direct (even if chat-only)
-    access to the account, I will only let myself have this permission, since
-    BingoParty is, in fact, my account. */
-    if (casePreservingRankRemovedIGN.toLowerCase() != "aphased") {
-      waitAndOutputCommand("r Hi " + casePreservingRankRemovedIGN + ", use !p help ", 500);
+    /* Administrator-only, undocumented command: will directly execute
+    _whatever_ is received. Due to this being de facto equivalent to having
+    direct (even if chat-only) access to the account, I will only let myself
+    have this permission, since BingoParty is, in fact, my account. */
+    if (!isAccountOwner(casePreservingRankRemovedSenderIGN)) {
+      waitAndOutputCommand("r Hi " + casePreservingRankRemovedSenderIGN + ", use !p help ", 500);
+      break;
     }
     /* This has to include the exact message, the same as it would be "typed"
     by a player, _minus_ the preceding slash. Examples:
@@ -392,9 +445,8 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
     /* The default case represents any non-valid command, thus we point towards
     the usage/help command since we know the attempt was sent by a user with
     command/party moderation permissions. */
-    waitAndOutputCommand("r Hi " + casePreservingRankRemovedIGN + ", use !p help ", 500);
-    // tmp/debug:
-    // console.log("[default case activated] No party command ran");
+    waitAndOutputCommand("r Hi " + casePreservingRankRemovedSenderIGN + ", use !p help ", 500);
+    logDebug("Default case activated, no party command ran");
     break;
   }
 }

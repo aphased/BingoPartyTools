@@ -9,7 +9,15 @@ Discord server's rules as actual data */
  * name for probably at least the next few Bingo events – not strictly a
  * necessary requirement, but used for nicer-looking output formatting
  */
-const partyHostNameWithoutRank = "BingoParty";
+export const partyHostNameWithoutRank = "BingoParty";
+/**
+ * IGNs which are allowed _full_ access over the bot account, e.g. BingoParty.
+ * Insert/alter as needed if this code is ran on an account
+ * other than BingoParty or one not owned by me (aphased).
+ * Use all lowercase for the entries (only internally used – no need to ever 
+ * be output with "correct" uppercasing)!
+*/
+export const partyHostAccountOwners = ["aphased", "rngecko", "bingoparty"];
 
 
 /* The players listed in the following allowlist will have access to all
@@ -21,31 +29,62 @@ TODO: the code in bpt.js currently expects these in-game name to be in all
 lowercase, and also obviously IGN changes have to be considered/updated
 manually, which wouldn't be necessary if I worked with e.g. UUIDs? */
 /*
-Explanation: on this list there should be:
-- BingoBrewers' staff and splashers and their alt accounts
+Explanation: on this list there should be the IGNs of:
+- BingoBrewers' staff as well as all splashers and their alt accounts
 - Bingo players who are typically active and known to be responsible wrt
   moderating the bingo party, plus YouTube ranks and Hypixel admins who are
   known to have been in the party (or playing Bingo in general) in the past.
 - Some hall of bingos are included, some more might be added in the future.
   To be honest, most HoB'ers do not really stay in the party that much.
 - Finally me (aphased) and my alt account for testing + control purposes,
-  the "BingoParty" Minecraft account I made.
+  the "BingoParty" Minecraft account I have.
 */
-const allowlist = ["hunterhihunter", "hub14", "indigo_polecat", "lcat_", "p0is",
-"p0is_", "bossflea", "mushedglowytonic", "sergeantsar", "baldgeant",
-"killz_stromzy", "stromzzy", "ooffyy", "bingosplasher", "batmancrtns",
-"netomnia", "watobato", "calva", "furken", "notcookies", "mafrylikebedwars",
-"notogfishyboi", "thathungrygoat", "foqh", "end_game_player", "gleolp",
-"domx2e", "karicc", "potjezout", "potjepeper", "ay212", "scathapet",
-"sakuricetwitch", "skyyblockerr", "smoothegg", "zerostulip", "dousedcharizard",
-"987654321kaboom", "katoulis", "tryp0mc", "timecharm", "dredlig", "aoik",
-"foragerredstone", "demonhunter990", "h8re", "godwyyn", "skyerzz", "citria",
-"benc1ark", "alexxoffi", "remittal", "crxmsxn", "erikeriklol",
-"kleinkolibri711", "rngecko", "aphased", "bingoparty"];
+export const allowlist = [
+  "hunterhihunter", "hub14",
+  "indigo_polecat", "indigo_poledog",
+  "lcat_",
+  "p0is", "p0is_",
+  "bossflea", "mushedglowytonic",
+  "sergeantsar", "baldgeant",
+  "killz_stromzy", "stromzzy",
+  "ooffyy", "bingosplasher",
+  "batmancrtns",
+  "netomnia",
+  "watobato",
+  "calva",
+  "furken",
+  "notcookies",
+  "mafrylikebedwars", "marfylikebedwars",
+  "987654321kaboom",
+  "katoulis",
+  "notogfishyboi",
+  "thathungrygoat",
+  "foqh",
+  "end_game_player",
+  "gleolp",
+  "domx2e",
+  "karicc",
+  "potjezout", "potjepeper",
+  "ay212",
+  "freakydj",
+  "scathapet",
+  "sakuricetwitch",
+  "skyyblockerr",
+  "smoothegg",
+  "zerostulip", "dousedcharizard",
+  "notaskyblockmain",
+  "emaia",
+  "xrezdro",
+  /* … */
+  "tryp0mc", "timecharm",
+  "dredlig", "aoik", "foragerredstone", "demonhunter990", "h8re", "godwyyn",
+  "skyerzz", "citria", "benc1ark", "alexxoffi", "remittal", "crxmsxn",
+  "erikeriklol", "kleinkolibri711", "rngecko", "aphased", "bingoparty"
+];
 
 
 // TODO: don't just call it data.js (move to proper data format or something)
-const bingoBrewersRules = new Map([
+export const bingoBrewersRules = new Map([
   //["1", "Do not ask when a splash is. This can be very annoying, it's when you get pinged in #splashes."],
   // cut original full wording due to Minecraft chat length limit, down to…:
   ["1", "Do not ask when a splash is. It's when you get pinged in #splashes."],
@@ -69,5 +108,3 @@ const bingoBrewersRules = new Map([
   ["ad", "Advertising is prohibited. This includes external splashes."],
 ]);
 
-
-export { allowlist, bingoBrewersRules, partyHostNameWithoutRank }
