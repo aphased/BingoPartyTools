@@ -15,7 +15,7 @@ export function removeRank(name) {
 
 export function isAccountOwner(ign) {
   ign = removeRank(ign).toLowerCase();
-  return partyHostAccountOwners.contains(ign);
+  return partyHostAccountOwners.includes(ign);
 }
 
 export function containsInNestedArray(arr, str) {
