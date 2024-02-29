@@ -137,6 +137,13 @@ Special thanks for the BingoBrewers Discord server & its community to:
 … catch me in-game or on Discord, with the same name as used here.
 
 
+## Related projects
+
+[aphased/BingoPartyBot](https://github.com/aphased/BingoPartyBot) aims to provide 
+all of the ChatTrigger module's features to a "true" bot account making use of 
+Mineflayer.
+
+
 ## License
 
 BingoPartyTools is open-sourced software licensed under the [MIT License](https://opensource.org/licenses/MIT).
