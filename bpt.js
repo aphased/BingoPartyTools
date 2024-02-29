@@ -141,8 +141,7 @@ You have 60 seconds to accept. Click here to join!
 // Trigger and call to processing function for auto-accepting party invitations:
 register("chat", function autoAcceptPartyInvite(formattedSenderName) {
   const unformattedPlayerName = removeRank(formattedSenderName).toLowerCase();
-  if (!BingoPartyTools.getSetting("BingoPartyFeatures", "Party autoaccept")) {
-    //outputCommand("msg " + unformattedPlayerName + " This setting is currently disabled. ("+ "autoaccept party invite" + ")");
+  if (!checkSetting("BingoPartyFeatures", "Party autoaccept")) {
     return;
   }
   if (!playerHasPermissions(formattedSenderName)) return;
