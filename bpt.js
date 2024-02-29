@@ -107,7 +107,7 @@ function checkSetting(settingCategory, setting, command) {
   if (usesChatTriggers) {
     // use a SettingsManager SettingsObject for the ChatTriggers module
     if (!BingoPartyTools.getSetting(settingCategory, setting)) {
-      let informDisabledSetting = "r This setting is currently disabled. ("+ command + ")";
+      const informDisabledSetting = "r This setting is currently disabled. ("+ command + ")";
       outputCommand(informDisabledSetting);
       return false;
     } else return true;
@@ -222,8 +222,8 @@ register("chat", function processCommandFromPartyChat(formattedSenderName, messa
 function executeHypixelPartyCommand(formattedSenderName, command, commandArgument, message) {
   // used for output in the disband and default (invalid) commands' output later
   const casePreservingRankRemovedSenderIGN = removeRank(formattedSenderName);
-
   let receivingPlayerName = commandArgument || "";
+  command = command.toLowerCase();
 
   /* Prevent splashers from kicking or even banning
   other players who have mod permissions: */
@@ -265,7 +265,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
     waitAndOutputCommand("r What exactly are your plans, " + casePreservingRankRemovedSenderIGN + "? :raisedEyebrow:", defaultTimeoutMillis);
     break;
   case "transfer":
-    if (checkSetting("BingoPartyFeatures", "Party transfer", command))
+    if (!checkSetting("BingoPartyFeatures", "Party transfer", command))
       break;
     if (receivingPlayerName === "") {
       break;
@@ -276,13 +276,13 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "unmute":
     // fallthrough for additional alias
   case "mute":
-    if (checkSetting("BingoPartyFeatures", "Party mute", command))
+    if (!checkSetting("BingoPartyFeatures", "Party mute", command))
       break;
     outputCommand("p mute");
     waitAndOutputCommand("pc Party mute was used by " + formattedSenderName + ".", defaultTimeoutMillis);
     break;
   case "promote":
-    if (checkSetting("BingoPartyFeatures", "Party promote", command))
+    if (!checkSetting("BingoPartyFeatures", "Party promote", command))
       break;
     if (receivingPlayerName === "") {
       // no name supplied, thus promote command sender instead
@@ -299,7 +299,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "remove":
     // fallthrough for additional alias
   case "kick":
-    if (checkSetting("BingoPartyFeatures", "Party kick", command))
+    if (!checkSetting("BingoPartyFeatures", "Party kick", command))
       break;
     if (receivingPlayerName === "") {
       break;
@@ -310,7 +310,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "ban":
     // fallthrough for additional alias
   case "block":
-    if (checkSetting("BingoPartyFeatures", "Party block", command))
+    if (!checkSetting("BingoPartyFeatures", "Party block", command))
       break;
     if (receivingPlayerName === "") {
       break;
@@ -322,7 +322,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "unban":
     // fallthrough for additional alias
   case "unblock":
-    if (checkSetting("BingoPartyFeatures", "Party unblock", command))
+    if (!checkSetting("BingoPartyFeatures", "Party unblock", command))
       break;
     outputCommand("ignore remove " + receivingPlayerName);
     waitAndOutputCommand("r Removed " + receivingPlayerName + " from ignore list.");
@@ -332,7 +332,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "public":
     // fallthrough for additional aliases
   case "stream":
-    if (checkSetting("BingoPartyFeatures", "Party open (stream size)", command))
+    if (!checkSetting("BingoPartyFeatures", "Party open (stream size)", command))
       break;
     // Hypixel's lowest for a stream is a maximum of two members, but that
     // does not really make sense for the bingo party. Adapt as needed.
@@ -355,7 +355,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "inv":
     // fallthrough for additional alias
   case "invite":
-    if (checkSetting("BingoPartyFeatures", "Party invite", command))
+    if (!checkSetting("BingoPartyFeatures", "Party invite", command))
       break;
     if (receivingPlayerName === "") {
       // no name supplied, thus invite command sender instead
@@ -365,7 +365,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
     waitAndOutputCommand("pc " + formattedSenderName + " invited " + receivingPlayerName + " to the party.", defaultTimeoutMillis);
     break;
   case "allinvite":
-    if (checkSetting("BingoPartyFeatures", "Party allinvite", command))
+    if (!checkSetting("BingoPartyFeatures", "Party allinvite", command))
       break;
     outputCommand("p setting allinvite");
     waitAndOutputCommand("pc " + formattedSenderName + " toggled allinvite setting.", defaultTimeoutMillis);
@@ -373,7 +373,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
   case "say":
     // fallthrough for additional alias
   case "speak":
-    if (checkSetting("BingoPartyFeatures", "Party speak", command))
+    if (!checkSetting("BingoPartyFeatures", "Party speak", command))
       break;
     outputCommand("pc " + formattedSenderName + ": " + messageToBroadcast);
     break;
@@ -395,7 +395,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
     // this task, or simply un-ignore/unblock IGNs manually as requested.
     break;
   case "rule":
-    if (checkSetting("BingoPartyFeatures", "Party rule", command))
+    if (!checkSetting("BingoPartyFeatures", "Party rule", command))
       break;
     let ruleNumber = "";
     // Convert iterator (map.keys()) into array to check against
@@ -415,7 +415,7 @@ function executeHypixelPartyCommand(formattedSenderName, command, commandArgumen
     waitAndOutputCommand("pc Rule #" + ruleNumber + ": " + bingoBrewersRules.get(ruleNumber), defaultTimeoutMillis);
     break;
   case "help":
-    if (checkSetting("BingoPartyFeatures", "!p help", command))
+    if (!checkSetting("BingoPartyFeatures", "!p help", command))
       break;
     /* The use of a couple different messages with essentially the same content
     is to prevent Hypixel's blocking of repeatedly sending the same in direct
